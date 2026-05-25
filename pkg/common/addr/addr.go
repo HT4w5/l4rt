@@ -1,6 +1,7 @@
 package addr
 
 import (
+	"errors"
 	"fmt"
 	"net/netip"
 	"strconv"
@@ -215,5 +216,18 @@ func parseAddrPort(hostPort string, proto Proto) (Addr, error) {
 		Addr:  hostPort[:colon],
 		Port:  uint16(port),
 		Proto: proto,
+	}, nil
+}
+
+func FromAddrPort(addrPort netip.AddrPort, proto Proto) (Addr, error) {
+	addr := addrPort.Addr().Unmap()
+	if !addr.IsValid() {
+		return Addr{}, errors.New("addr.FromAddrPort: invalid IP address")
+	}
+
+	return Addr{
+		IPAddr: addr,
+		Port:   addrPort.Port(),
+		Proto:  proto,
 	}, nil
 }
