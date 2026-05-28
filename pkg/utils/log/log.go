@@ -6,5 +6,5 @@ import (
 
 type Config interface {
 	Level() zerolog.Level
-	Location() string
+	Output() string
 }

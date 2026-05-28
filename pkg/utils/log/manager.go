@@ -15,32 +15,29 @@ type LoggerGetter interface {
 }
 
 type LoggerManager struct {
-	locationMap  map[string]io.Writer
+	outputMap    map[string]io.Writer
 	pullInterval time.Duration
 	bufferSize   int
 }
 
 func NewLoggerManager(bufferSize int, pullInterval time.Duration) *LoggerManager {
 	return &LoggerManager{
-		locationMap:  make(map[string]io.Writer),
+		outputMap:    make(map[string]io.Writer),
 		bufferSize:   bufferSize,
 		pullInterval: pullInterval,
 	}
 }
 
 func (lm *LoggerManager) GetLogger(cfg Config, module string) (zerolog.Logger, error) {
-	location := cfg.Location()
-	if location == "" {
-		location = "stderr"
-	}
+	output := cfg.Output()
 
 	var w io.Writer
 	if cfg.Level() == zerolog.Disabled {
 		w = io.Discard
-	} else if dw, ok := lm.locationMap[location]; ok {
+	} else if dw, ok := lm.outputMap[output]; ok {
 		w = dw
 	} else {
-		switch location {
+		switch output {
 		case "":
 			fallthrough
 		case "stderr":
@@ -49,7 +46,7 @@ func (lm *LoggerManager) GetLogger(cfg Config, module string) (zerolog.Logger, e
 			w = diode.NewWriter(os.Stdout, lm.bufferSize, lm.pullInterval, nil)
 		default:
 			f, err := os.OpenFile(
-				location,
+				output,
 				os.O_APPEND|os.O_CREATE|os.O_WRONLY,
 				0600,
 			)
@@ -59,7 +56,7 @@ func (lm *LoggerManager) GetLogger(cfg Config, module string) (zerolog.Logger, e
 
 			w = diode.NewWriter(f, lm.bufferSize, lm.pullInterval, nil)
 		}
-		lm.locationMap[location] = w
+		lm.outputMap[output] = w
 	}
 
 	return zerolog.New(w).Level(cfg.Level()).With().Timestamp().Str("module", module).Logger(), nil
