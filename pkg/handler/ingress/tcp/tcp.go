@@ -17,7 +17,7 @@ import (
 type TCPIngressConfig interface {
 	handler.HandlerConfig
 	Listen() netip.AddrPort
-	NextTag() string
+	Next() string
 }
 
 // TCPIngress listens for TCP connections.
@@ -25,9 +25,9 @@ type TCPIngressConfig interface {
 // TCPIngress implements [github.com/HT4w5/l4rt/pkg/handler.IngressHandler].
 type TCPIngress struct {
 	cfg struct {
-		tag     string
-		nextTag string
-		listen  netip.AddrPort
+		tag    string
+		next   string
+		listen netip.AddrPort
 	}
 
 	deps struct {
@@ -49,7 +49,7 @@ func BuildTCPIngress(cfg TCPIngressConfig, deps handler.HandlerDeps) (*TCPIngres
 	h := new(TCPIngress)
 
 	h.cfg.tag = cfg.Tag()
-	h.cfg.nextTag = cfg.NextTag()
+	h.cfg.next = cfg.Next()
 	h.cfg.listen = cfg.Listen()
 
 	h.deps.ctxr = deps.ContextRenter
