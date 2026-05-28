@@ -34,10 +34,10 @@ type IngressHandler interface {
 	Shutdown(ctx context.Context) error
 }
 
-type WireFunction func(_type string) (Handler, bool)
+type WireFunc func(tag string) (Handler, bool)
 
 type Wireable interface {
-	Wire(getHandler WireFunction) error
+	Wire(getHandler WireFunc) error
 }
 
 type HandlerDeps struct {
