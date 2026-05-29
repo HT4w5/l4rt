@@ -27,7 +27,7 @@ type TCPEgressConfig interface {
 
 // TCPEgress forwards a byte stream to a target tcp address.
 //
-// TCPEgress implements [github.com/HT4w5/l4rt/pkg/handler.ByteStreamHandler].
+// TCPEgress implements [github.com/HT4w5/l4rt/pkg/handler.StreamHandler].
 type TCPEgress struct {
 	cfg struct {
 		tag string

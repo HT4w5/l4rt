@@ -32,7 +32,7 @@ type TCPIngress struct {
 
 	deps struct {
 		ctxr   scontext.ContextRenter
-		next   handler.ByteStreamHandler
+		next   handler.StreamHandler
 		logger zerolog.Logger
 	}
 

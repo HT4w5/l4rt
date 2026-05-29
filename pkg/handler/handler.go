@@ -15,14 +15,14 @@ type Handler interface {
 	Stats() map[string]any
 }
 
-// ByteStreamHandler handles one byte stream.
-type ByteStreamHandler interface {
+// StreamHandler handles one byte stream.
+type StreamHandler interface {
 	Handler
 	HandleStream(ctx *scontext.Context, s stream.ByteStream) error
 }
 
-// PacketStreamHandler handles one packet stream.
-type PacketStreamHandler interface {
+// PacketHandler handles one packet stream.
+type PacketHandler interface {
 	Handler
 	HandlePacket(ctx *scontext.Context, s stream.PacketStream) error
 }
