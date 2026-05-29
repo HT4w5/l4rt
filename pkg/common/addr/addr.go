@@ -51,10 +51,6 @@ func (a *Addr) Network() string {
 	}
 }
 
-func (a *Addr) IsIPAddr() bool {
-	return a.IPAddr.IsValid()
-}
-
 // String returns string form of address.
 //
 // For TCP and UDP, "<ipaddr/fqdn>:<port>".

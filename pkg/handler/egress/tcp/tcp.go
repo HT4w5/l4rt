@@ -1,23 +1,17 @@
 package tcp
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"sync/atomic"
 	"time"
 
-	"github.com/HT4w5/l4rt/pkg/common/addr"
 	scontext "github.com/HT4w5/l4rt/pkg/common/context"
 	"github.com/HT4w5/l4rt/pkg/common/stream"
 	"github.com/HT4w5/l4rt/pkg/handler"
 	"github.com/HT4w5/l4rt/pkg/utils/pipe"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
-)
-
-var (
-	ErrNotTCPIPAddress = errors.New("not a TCP/IP address")
 )
 
 type TCPEgressConfig interface {
@@ -48,7 +42,7 @@ type TCPEgress struct {
 func BuildTCPEgress(cfg TCPEgressConfig, deps handler.HandlerDeps) (*TCPEgress, error) {
 	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "")
 	if err != nil {
-		return nil, fmt.Errorf("egress.BuildTCPEgress: failed to get logger: %w", err)
+		return nil, fmt.Errorf("BuildTCPEgress: failed to get logger: %w", err)
 	}
 	h := new(TCPEgress)
 
@@ -82,14 +76,16 @@ func (h *TCPEgress) Stats() map[string]any {
 func (h *TCPEgress) HandleStream(ctx *scontext.Context, s stream.ByteStream) error {
 	h.stats.handled.Add(1)
 	// Dst must be a valid TCP/IP address
-	if !ctx.Dst.IsIPAddr() || ctx.Dst.Proto != addr.ProtoTCP {
-		return ErrNotTCPIPAddress
+	ap, err := ctx.Dst.AssertTCPIPAddr()
+	if err != nil {
+		return err
 	}
 
 	// TODO: dial options (timeout, redirect, laddr, etc.)
-	conn, err := h.deps.dialer.DialContext(ctx.Ctx, "tcp", ctx.Dst.String())
+	conn, err := h.deps.dialer.DialContext(ctx.Ctx, "tcp", ap.String())
 	if err != nil {
-		return fmt.Errorf("dial %s: %w", ctx.Dst.URI(), err)
+		h.deps.logger.Warn().Err(err).Str("addr", ctx.Dst.URI()).Msg("dial failure")
+		return err
 	}
 
 	eg := new(errgroup.Group)
