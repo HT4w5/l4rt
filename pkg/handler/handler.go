@@ -30,7 +30,9 @@ type PacketHandler interface {
 // IngressHandler handles incoming external streams.
 type IngressHandler interface {
 	Handler
+	// Start starts ingress handling, blocks during handle, and stops when context expires.
 	Start(ctx context.Context) error
+	// Shutdown stops handling, waits for existing routines to finish or context to expire.
 	Shutdown(ctx context.Context) error
 }
 
@@ -38,7 +40,8 @@ type WireFunc func(tag string) (Handler, bool)
 
 // Wireable can be wired into pipeline by calling Wire.
 type Wireable interface {
-	// Wire registers handlers returned by WireFunc into handler's deps.
+	Handler
+	// Wire registers handlers returned by WireFunc into Wireable's deps.
 	Wire(getHandler WireFunc) error
 }
 

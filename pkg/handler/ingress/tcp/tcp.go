@@ -2,9 +2,11 @@ package tcp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/netip"
+	"sync"
 	"sync/atomic"
 
 	"github.com/HT4w5/l4rt/pkg/common/addr"
@@ -18,6 +20,23 @@ type TCPIngressConfig interface {
 	handler.HandlerConfig
 	Listen() netip.AddrPort
 	Next() string
+}
+
+func BuildTCPIngress(cfg TCPIngressConfig, deps handler.HandlerDeps) (*TCPIngress, error) {
+	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
+	if err != nil {
+		return nil, fmt.Errorf("BuildTCPIngress: failed to get logger: %w", err)
+	}
+	h := new(TCPIngress)
+
+	h.cfg.tag = cfg.Tag()
+	h.cfg.next = cfg.Next()
+	h.cfg.listen = cfg.Listen()
+
+	h.deps.ctxr = deps.ContextRenter
+	h.deps.logger = logger
+
+	return h, nil
 }
 
 // TCPIngress listens for TCP connections.
@@ -36,25 +55,15 @@ type TCPIngress struct {
 		logger zerolog.Logger
 	}
 
+	pool struct {
+		sync.WaitGroup
+		listener  net.Listener
+		closeOnce sync.Once
+	}
+
 	stats struct {
 		accepted atomic.Int64
 	}
-}
-
-func BuildTCPIngress(cfg TCPIngressConfig, deps handler.HandlerDeps) (*TCPIngress, error) {
-	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
-	if err != nil {
-		return nil, fmt.Errorf("BuildTCPIngress: failed to get logger: %w", err)
-	}
-	h := new(TCPIngress)
-
-	h.cfg.tag = cfg.Tag()
-	h.cfg.next = cfg.Next()
-	h.cfg.listen = cfg.Listen()
-
-	h.deps.ctxr = deps.ContextRenter
-	h.deps.logger = logger
-	return h, nil
 }
 
 // Implement Handler
@@ -88,26 +97,33 @@ func (ig *TCPIngress) Wire(getHandler handler.WireFunc) error {
 
 func (ig *TCPIngress) Start(ctx context.Context) error {
 	lc := net.ListenConfig{}
-	ln, err := lc.Listen(ctx, "tcp", ig.cfg.listen.String())
+	var err error
+	ig.pool.listener, err = lc.Listen(ctx, "tcp", ig.cfg.listen.String())
 	if err != nil {
 		return err
 	}
 
 	go func() {
 		<-ctx.Done()
-		ln.Close()
+		ig.pool.closeOnce.Do(func() {
+			if ig.pool.listener != nil {
+				ig.pool.listener.Close()
+			}
+		})
 	}()
 
 	for {
-		conn, err := ln.Accept()
+		conn, err := ig.pool.listener.Accept()
 		if err != nil {
-			if ctx.Err() != nil {
+			if errors.Is(err, net.ErrClosed) || ctx.Err() != nil {
 				return nil
 			}
 			return err
 		}
 		ig.stats.accepted.Add(1)
-		go ig.handleConn(ctx, conn)
+		ig.pool.Go(func() {
+			ig.handleConn(ctx, conn)
+		})
 	}
 }
 
@@ -137,4 +153,23 @@ func (ig *TCPIngress) handleConn(ctx context.Context, conn net.Conn) {
 	tcpConn := conn.(*net.TCPConn)
 
 	ig.deps.next.HandleStream(sctx, stream.NewTCPStream(tcpConn))
+}
+
+func (ig *TCPIngress) Shutdown(ctx context.Context) error {
+	ig.pool.closeOnce.Do(func() {
+		if ig.pool.listener != nil {
+			ig.pool.listener.Close()
+		}
+	})
+	done := make(chan struct{})
+	go func() {
+		ig.pool.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
