@@ -36,7 +36,9 @@ type IngressHandler interface {
 
 type WireFunc func(tag string) (Handler, bool)
 
+// Wireable can be wired into pipeline by calling Wire.
 type Wireable interface {
+	// Wire registers handlers returned by WireFunc into handler's deps.
 	Wire(getHandler WireFunc) error
 }
 

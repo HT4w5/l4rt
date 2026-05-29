@@ -44,7 +44,7 @@ type TCPIngress struct {
 func BuildTCPIngress(cfg TCPIngressConfig, deps handler.HandlerDeps) (*TCPIngress, error) {
 	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
 	if err != nil {
-		return nil, fmt.Errorf("ingress.BuildTCPIngress: failed to get logger: %w", err)
+		return nil, fmt.Errorf("BuildTCPIngress: failed to get logger: %w", err)
 	}
 	h := new(TCPIngress)
 
@@ -57,6 +57,8 @@ func BuildTCPIngress(cfg TCPIngressConfig, deps handler.HandlerDeps) (*TCPIngres
 	return h, nil
 }
 
+// Implement Handler
+
 func (ig *TCPIngress) Tag() string {
 	return ig.cfg.tag
 }
@@ -66,6 +68,23 @@ func (ig *TCPIngress) Stats() map[string]any {
 		"accepted": ig.stats.accepted.Load(),
 	}
 }
+
+// Implement Wireable
+
+func (ig *TCPIngress) Wire(getHandler handler.WireFunc) error {
+	h, ok := getHandler(ig.cfg.next)
+	if !ok {
+		return fmt.Errorf("TCPIngress.Wire: no handler with tag %q", ig.cfg.next)
+	}
+	sh, ok := h.(handler.StreamHandler)
+	if !ok {
+		return fmt.Errorf("TCPIngress.Wire: expected %q to be StreamHandler, got %T", ig.cfg.next, h)
+	}
+	ig.deps.next = sh
+	return nil
+}
+
+// Implement IngressHandler
 
 func (ig *TCPIngress) Start(ctx context.Context) error {
 	lc := net.ListenConfig{}

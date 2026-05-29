@@ -63,6 +63,8 @@ func BuildTCPEgress(cfg TCPEgressConfig, deps handler.HandlerDeps) (*TCPEgress, 
 	return h, nil
 }
 
+// Implement Handler
+
 func (h *TCPEgress) Tag() string {
 	return h.cfg.tag
 }
@@ -74,6 +76,8 @@ func (h *TCPEgress) Stats() map[string]any {
 		"handled": h.stats.handled.Load(),
 	}
 }
+
+// Implement StreamHandler
 
 func (h *TCPEgress) HandleStream(ctx *scontext.Context, s stream.ByteStream) error {
 	h.stats.handled.Add(1)
