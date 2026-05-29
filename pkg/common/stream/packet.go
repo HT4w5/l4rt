@@ -7,11 +7,12 @@ import (
 )
 
 type PacketReader interface {
-	ReadPacket() (p []byte, src addr.Addr, err error)
+	// A second call invalidates the previous returned payload slice.
+	ReadPacket() (b []byte, src addr.Addr, err error)
 }
 
 type PacketWriter interface {
-	WritePacket(p []byte, dst addr.Addr) error
+	WritePacket(b []byte, dst addr.Addr) error
 }
 
 type PacketStream interface {
