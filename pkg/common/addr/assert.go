@@ -52,7 +52,7 @@ func (a *Addr) AssertTCPIPAddr() (ap netip.AddrPort, err error) {
 
 func (a *Addr) AssertUDPIPAddr() (ap netip.AddrPort, err error) {
 	if !a.IPAddr.IsValid() || a.Proto != ProtoUDP {
-		err = ErrNotLoopAddr
+		err = ErrNotUDPIPAddr
 		return
 	}
 	ap = netip.AddrPortFrom(a.IPAddr, a.Port)
