@@ -31,7 +31,7 @@ func (hf *HandlerFactory) Build(cfg handler.HandlerConfig) (handler.Handler, err
 	// Egress handlers
 	case egress_tcp.TCPEgressConfig:
 		return egress_tcp.BuildTCPEgress(c, hf.deps)
-	case egress_udp.UDPEngressConfig:
+	case egress_udp.UDPEgressConfig:
 		return egress_udp.BuildUDPEgress(c, hf.deps)
 	default:
 		return nil, fmt.Errorf("factory.HandlerFactory.Build: unsupported config type %T", cfg)

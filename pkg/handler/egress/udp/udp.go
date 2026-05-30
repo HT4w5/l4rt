@@ -14,11 +14,11 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type UDPEngressConfig interface {
+type UDPEgressConfig interface {
 	handler.HandlerConfig
 }
 
-func BuildUDPEgress(cfg UDPEngressConfig, deps handler.HandlerDeps) (*UDPEgress, error) {
+func BuildUDPEgress(cfg UDPEgressConfig, deps handler.HandlerDeps) (*UDPEgress, error) {
 	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
 	if err != nil {
 		return nil, fmt.Errorf("BuildUDPEgress: failed to get logger: %w", err)
