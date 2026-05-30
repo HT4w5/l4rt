@@ -5,7 +5,9 @@ import (
 
 	"github.com/HT4w5/l4rt/pkg/handler"
 	egress_tcp "github.com/HT4w5/l4rt/pkg/handler/egress/tcp"
+	egress_udp "github.com/HT4w5/l4rt/pkg/handler/egress/udp"
 	ingress_tcp "github.com/HT4w5/l4rt/pkg/handler/ingress/tcp"
+	ingress_udp "github.com/HT4w5/l4rt/pkg/handler/ingress/udp"
 )
 
 type HandlerFactory struct {
@@ -24,9 +26,13 @@ func (hf *HandlerFactory) Build(cfg handler.HandlerConfig) (handler.Handler, err
 	// Ingress handlers
 	case ingress_tcp.TCPIngressConfig:
 		return ingress_tcp.BuildTCPIngress(c, hf.deps)
+	case ingress_udp.UDPIngressConfig:
+		return ingress_udp.BuildUDPIngress(c, hf.deps)
 	// Egress handlers
 	case egress_tcp.TCPEgressConfig:
 		return egress_tcp.BuildTCPEgress(c, hf.deps)
+	case egress_udp.UDPEngressConfig:
+		return egress_udp.BuildUDPEgress(c, hf.deps)
 	default:
 		return nil, fmt.Errorf("factory.HandlerFactory.Build: unsupported config type %T", cfg)
 	}
