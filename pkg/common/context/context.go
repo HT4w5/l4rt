@@ -9,10 +9,9 @@ import (
 type Context struct {
 	Ctx          context.Context
 	KV           map[uint64]uint64
-	Release      func()
-	HandlerStack []string
 	Src          addr.Addr
 	Dst          addr.Addr
+	HandlerStack []string
 	ID           uint64
 	IsPacket     bool
 }

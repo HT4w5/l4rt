@@ -132,6 +132,7 @@ func (ig *TCPIngress) handleConn(ctx context.Context, conn net.Conn) {
 	defer cancel()
 
 	sctx := ig.deps.ctxr.Rent(streamCtx)
+	defer ig.deps.ctxr.Release(sctx)
 
 	sctx.HandlerStack = append(sctx.HandlerStack, ig.cfg.tag)
 

@@ -107,6 +107,8 @@ func (ui *UDPIngress) Start(ctx context.Context) error {
 	}()
 
 	sctx := ui.deps.ctxr.Rent(ctx)
+	defer ui.deps.ctxr.Release(sctx)
+
 	sctx.HandlerStack = append(sctx.HandlerStack, ui.cfg.tag)
 	sctx.IsPacket = true
 
