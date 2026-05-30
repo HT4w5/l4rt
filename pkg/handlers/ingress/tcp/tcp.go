@@ -12,17 +12,17 @@ import (
 	"github.com/HT4w5/l4rt/pkg/common/addr"
 	scontext "github.com/HT4w5/l4rt/pkg/common/context"
 	"github.com/HT4w5/l4rt/pkg/common/stream"
-	"github.com/HT4w5/l4rt/pkg/handler"
+	"github.com/HT4w5/l4rt/pkg/handlers"
 	"github.com/rs/zerolog"
 )
 
 type TCPIngressConfig interface {
-	handler.HandlerConfig
+	handlers.HandlerConfig
 	Listen() netip.AddrPort
 	Next() string
 }
 
-func BuildTCPIngress(cfg TCPIngressConfig, deps handler.HandlerDeps) (*TCPIngress, error) {
+func BuildTCPIngress(cfg TCPIngressConfig, deps handlers.HandlerDeps) (*TCPIngress, error) {
 	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
 	if err != nil {
 		return nil, fmt.Errorf("BuildTCPIngress: failed to get logger: %w", err)
@@ -41,7 +41,7 @@ func BuildTCPIngress(cfg TCPIngressConfig, deps handler.HandlerDeps) (*TCPIngres
 
 // TCPIngress listens for TCP connections.
 //
-// TCPIngress implements [github.com/HT4w5/l4rt/pkg/handler.IngressHandler].
+// TCPIngress implements [github.com/HT4w5/l4rt/pkg/handlers.IngressHandler].
 type TCPIngress struct {
 	cfg struct {
 		tag    string
@@ -51,7 +51,7 @@ type TCPIngress struct {
 
 	deps struct {
 		ctxr   scontext.ContextRenter
-		next   handler.StreamHandler
+		next   handlers.StreamHandler
 		logger zerolog.Logger
 	}
 
@@ -78,14 +78,14 @@ func (ig *TCPIngress) Stats() map[string]any {
 	}
 }
 
-// Implement Wireable
+// Implement Wirer
 
-func (ig *TCPIngress) Wire(getHandler handler.WireFunc) error {
+func (ig *TCPIngress) Wire(getHandler handlers.WireFunc) error {
 	h, ok := getHandler(ig.cfg.next)
 	if !ok {
 		return fmt.Errorf("TCPIngress.Wire: no handler with tag %q", ig.cfg.next)
 	}
-	sh, ok := h.(handler.StreamHandler)
+	sh, ok := h.(handlers.StreamHandler)
 	if !ok {
 		return fmt.Errorf("TCPIngress.Wire: expected %q to be StreamHandler, got %T", ig.cfg.next, h)
 	}

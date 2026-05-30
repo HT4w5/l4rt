@@ -9,16 +9,16 @@ import (
 	"github.com/HT4w5/l4rt/pkg/common/constants"
 	scontext "github.com/HT4w5/l4rt/pkg/common/context"
 	"github.com/HT4w5/l4rt/pkg/common/stream"
-	"github.com/HT4w5/l4rt/pkg/handler"
+	"github.com/HT4w5/l4rt/pkg/handlers"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 )
 
 type UDPEgressConfig interface {
-	handler.HandlerConfig
+	handlers.HandlerConfig
 }
 
-func BuildUDPEgress(cfg UDPEgressConfig, deps handler.HandlerDeps) (*UDPEgress, error) {
+func BuildUDPEgress(cfg UDPEgressConfig, deps handlers.HandlerDeps) (*UDPEgress, error) {
 	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
 	if err != nil {
 		return nil, fmt.Errorf("BuildUDPEgress: failed to get logger: %w", err)
@@ -34,7 +34,7 @@ func BuildUDPEgress(cfg UDPEgressConfig, deps handler.HandlerDeps) (*UDPEgress, 
 
 // UDPEgress forwards packets from a PacketStream.
 //
-// UDPEgress implements [github.com/HT4w5/l4rt/pkg/handler.PacketHandler].
+// UDPEgress implements [github.com/HT4w5/l4rt/pkg/handlers.PacketHandler].
 type UDPEgress struct {
 	cfg struct {
 		tag string

@@ -3,25 +3,25 @@ package factory
 import (
 	"fmt"
 
-	"github.com/HT4w5/l4rt/pkg/handler"
-	egress_tcp "github.com/HT4w5/l4rt/pkg/handler/egress/tcp"
-	egress_udp "github.com/HT4w5/l4rt/pkg/handler/egress/udp"
-	ingress_tcp "github.com/HT4w5/l4rt/pkg/handler/ingress/tcp"
-	ingress_udp "github.com/HT4w5/l4rt/pkg/handler/ingress/udp"
+	"github.com/HT4w5/l4rt/pkg/handlers"
+	egress_tcp "github.com/HT4w5/l4rt/pkg/handlers/egress/tcp"
+	egress_udp "github.com/HT4w5/l4rt/pkg/handlers/egress/udp"
+	ingress_tcp "github.com/HT4w5/l4rt/pkg/handlers/ingress/tcp"
+	ingress_udp "github.com/HT4w5/l4rt/pkg/handlers/ingress/udp"
 )
 
 type HandlerFactory struct {
-	deps handler.HandlerDeps
+	deps handlers.HandlerDeps
 }
 
-func NewHandlerFactory(deps handler.HandlerDeps) *HandlerFactory {
+func NewHandlerFactory(deps handlers.HandlerDeps) *HandlerFactory {
 	return &HandlerFactory{
 		deps: deps,
 	}
 }
 
 // Build constructs a Handler from the given config using the registered builder.
-func (hf *HandlerFactory) Build(cfg handler.HandlerConfig) (handler.Handler, error) {
+func (hf *HandlerFactory) Build(cfg handlers.HandlerConfig) (handlers.Handler, error) {
 	switch c := cfg.(type) {
 	// Ingress handlers
 	case ingress_tcp.TCPIngressConfig:

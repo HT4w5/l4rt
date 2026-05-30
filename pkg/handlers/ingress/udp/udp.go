@@ -10,17 +10,17 @@ import (
 
 	scontext "github.com/HT4w5/l4rt/pkg/common/context"
 	"github.com/HT4w5/l4rt/pkg/common/stream"
-	"github.com/HT4w5/l4rt/pkg/handler"
+	"github.com/HT4w5/l4rt/pkg/handlers"
 	"github.com/rs/zerolog"
 )
 
 type UDPIngressConfig interface {
-	handler.HandlerConfig
+	handlers.HandlerConfig
 	Listen() netip.AddrPort
 	Next() string
 }
 
-func BuildUDPIngress(cfg UDPIngressConfig, deps handler.HandlerDeps) (*UDPIngress, error) {
+func BuildUDPIngress(cfg UDPIngressConfig, deps handlers.HandlerDeps) (*UDPIngress, error) {
 	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
 	if err != nil {
 		return nil, fmt.Errorf("BuildUDPIngress: failed to get logger: %w", err)
@@ -49,7 +49,7 @@ type UDPIngress struct {
 
 	deps struct {
 		ctxr   scontext.ContextRenter
-		next   handler.PacketHandler
+		next   handlers.PacketHandler
 		logger zerolog.Logger
 	}
 
@@ -70,14 +70,14 @@ func (ui *UDPIngress) Stats() map[string]any {
 	return map[string]any{}
 }
 
-// Implement Wireable
+// Implement Wirer
 
-func (ui *UDPIngress) Wire(getHandler handler.WireFunc) error {
+func (ui *UDPIngress) Wire(getHandler handlers.WireFunc) error {
 	h, ok := getHandler(ui.cfg.next)
 	if !ok {
 		return fmt.Errorf("UDPIngress.Wire: no handler with tag %q", ui.cfg.next)
 	}
-	ph, ok := h.(handler.PacketHandler)
+	ph, ok := h.(handlers.PacketHandler)
 	if !ok {
 		return fmt.Errorf("UDPIngress.Wire: expected %q to be StreamHandler, got %T", ui.cfg.next, h)
 	}

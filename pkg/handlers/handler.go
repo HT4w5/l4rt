@@ -1,4 +1,4 @@
-package handler
+package handlers
 
 import (
 	"context"
@@ -38,10 +38,10 @@ type IngressHandler interface {
 
 type WireFunc func(tag string) (Handler, bool)
 
-// Wireable can be wired into pipeline by calling Wire.
-type Wireable interface {
+// Wirer can be wired into pipeline by calling Wire.
+type Wirer interface {
 	Handler
-	// Wire registers handlers returned by WireFunc into Wireable's deps.
+	// Wire registers handlers returned by WireFunc into Wirer's deps.
 	Wire(getHandler WireFunc) error
 }
 

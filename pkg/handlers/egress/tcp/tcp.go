@@ -8,18 +8,18 @@ import (
 
 	scontext "github.com/HT4w5/l4rt/pkg/common/context"
 	"github.com/HT4w5/l4rt/pkg/common/stream"
-	"github.com/HT4w5/l4rt/pkg/handler"
+	"github.com/HT4w5/l4rt/pkg/handlers"
 	"github.com/HT4w5/l4rt/pkg/utils/pipe"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 )
 
 type TCPEgressConfig interface {
-	handler.HandlerConfig
+	handlers.HandlerConfig
 	DialTimeout() time.Duration
 }
 
-func BuildTCPEgress(cfg TCPEgressConfig, deps handler.HandlerDeps) (*TCPEgress, error) {
+func BuildTCPEgress(cfg TCPEgressConfig, deps handlers.HandlerDeps) (*TCPEgress, error) {
 	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
 	if err != nil {
 		return nil, fmt.Errorf("BuildTCPEgress: failed to get logger: %w", err)
@@ -39,7 +39,7 @@ func BuildTCPEgress(cfg TCPEgressConfig, deps handler.HandlerDeps) (*TCPEgress, 
 
 // TCPEgress forwards a byte stream to a target tcp address.
 //
-// TCPEgress implements [github.com/HT4w5/l4rt/pkg/handler.StreamHandler].
+// TCPEgress implements [github.com/HT4w5/l4rt/pkg/handlers.StreamHandler].
 type TCPEgress struct {
 	cfg struct {
 		tag string
