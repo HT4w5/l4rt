@@ -18,6 +18,9 @@ type TCPEgressConfig struct {
 }
 
 func (cfg *TCPEgressConfig) Validate() error {
+	if cfg.LogConfig_ == nil {
+		cfg.LogConfig_ = new(LogConfig)
+	}
 	if err := cfg.LogConfig_.Validate(); err != nil {
 		return fmt.Errorf("TCPEgressConfig: %w", err)
 	}

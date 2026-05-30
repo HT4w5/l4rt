@@ -20,6 +20,9 @@ type UDPIngressConfig struct {
 }
 
 func (cfg *UDPIngressConfig) Validate() error {
+	if cfg.LogConfig_ == nil {
+		cfg.LogConfig_ = new(LogConfig)
+	}
 	if err := cfg.LogConfig_.Validate(); err != nil {
 		return fmt.Errorf("UDPIngressConfig: %w", err)
 	}
