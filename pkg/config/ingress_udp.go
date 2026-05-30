@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/netip"
 
-	"github.com/HT4w5/l4rt/pkg/utils/log"
+	"github.com/HT4w5/l4rt/pkg/modules/log"
 )
 
 // UDPIngressConfig implements [github.com/HT4w5/l4rt/pkg/handler/ingress/udp.UDPIngressConfig]

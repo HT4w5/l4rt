@@ -7,16 +7,26 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// LogConfig implements [github.com/HT4w5/l4rt/pkg/utils/log.Config]
+// LogConfig implements [github.com/HT4w5/l4rt/pkg/modules/log.Config]
 type LogConfig struct {
-	Level_  string `json:"level"`
-	Output_ string `json:"output"`
+	Level_        string `json:"level"`
+	Output_       string `json:"output"`
+	AddCaller_    *bool  `json:"add_caller"`
+	AddTimestamp_ *bool  `json:"add_timestamp"`
 
 	level  zerolog.Level
 	output string
 }
 
 func (cfg *LogConfig) Validate() error {
+	if cfg.AddCaller_ == nil {
+		cfg.AddCaller_ = new(false)
+	}
+	if cfg.AddTimestamp_ == nil {
+		cfg.AddTimestamp_ = new(true)
+	}
+
+	// level
 	switch strings.ToLower(cfg.Level_) {
 	case "debug":
 		cfg.level = zerolog.DebugLevel
@@ -40,6 +50,7 @@ func (cfg *LogConfig) Validate() error {
 		return fmt.Errorf("LogConfig: unknown level %s", cfg.Level_)
 	}
 
+	// output
 	switch strings.ToLower(cfg.Output_) {
 	case "":
 		fallthrough
@@ -60,4 +71,12 @@ func (cfg *LogConfig) Level() zerolog.Level {
 
 func (cfg *LogConfig) Output() string {
 	return cfg.output
+}
+
+func (cfg *LogConfig) AddCaller() bool {
+	return *cfg.AddCaller_
+}
+
+func (cfg *LogConfig) AddTimestamp() bool {
+	return *cfg.AddTimestamp_
 }

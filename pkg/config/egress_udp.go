@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/HT4w5/l4rt/pkg/utils/log"
+	"github.com/HT4w5/l4rt/pkg/modules/log"
 )
 
 // UDPEgressConfig implements [github.com/HT4w5/l4rt/pkg/handler/egress/udp.UDPEgressConfig]

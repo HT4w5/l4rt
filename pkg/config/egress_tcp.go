@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/HT4w5/l4rt/pkg/utils/log"
+	"github.com/HT4w5/l4rt/pkg/modules/log"
 )
 
 // TCPEgressConfig implements [github.com/HT4w5/l4rt/pkg/handler/egress/tcp.TCPEgressConfig]
