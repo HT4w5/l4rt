@@ -21,7 +21,8 @@ func NewUDPPacketStream(conn *net.UDPConn) *UDPPacketStream {
 	}
 }
 
-func (s *UDPPacketStream) ReadPacket() (b []byte, src addr.Addr, err error) {
+func (s *UDPPacketStream) ReadPacket() (b []byte, src, dst addr.Addr, err error) {
+	dst = addr.UnknownAddr
 	var n int
 	var ap netip.AddrPort
 	n, ap, err = s.conn.ReadFromUDPAddrPort(s.buf)
@@ -38,7 +39,7 @@ func (s *UDPPacketStream) ReadPacket() (b []byte, src addr.Addr, err error) {
 	return
 }
 
-func (s *UDPPacketStream) WritePacket(b []byte, dst addr.Addr) error {
+func (s *UDPPacketStream) WritePacket(b []byte, src, dst addr.Addr) error {
 	ap, err := dst.AssertUDPIPAddr()
 	if err != nil {
 		return err

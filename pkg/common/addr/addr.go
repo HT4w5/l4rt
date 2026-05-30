@@ -18,6 +18,12 @@ const (
 	ProtoLoop
 )
 
+var (
+	UnknownAddr Addr = Addr{
+		Proto: ProtoUnknown,
+	}
+)
+
 // Addr represents the origin or destination of a stream.
 //
 // If Proto is TCP or UDP and IPAddr is invalid, Addr is used as FQDN.

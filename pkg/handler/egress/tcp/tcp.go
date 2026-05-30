@@ -19,6 +19,24 @@ type TCPEgressConfig interface {
 	DialTimeout() time.Duration
 }
 
+func BuildTCPEgress(cfg TCPEgressConfig, deps handler.HandlerDeps) (*TCPEgress, error) {
+	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
+	if err != nil {
+		return nil, fmt.Errorf("BuildTCPEgress: failed to get logger: %w", err)
+	}
+	h := new(TCPEgress)
+
+	h.cfg.tag = cfg.Tag()
+
+	h.deps.dialer = net.Dialer{
+		Timeout: cfg.DialTimeout(), // TODO: general dialer config
+	}
+
+	h.deps.logger = logger
+
+	return h, nil
+}
+
 // TCPEgress forwards a byte stream to a target tcp address.
 //
 // TCPEgress implements [github.com/HT4w5/l4rt/pkg/handler.StreamHandler].
@@ -37,24 +55,6 @@ type TCPEgress struct {
 		tx      atomic.Int64
 		handled atomic.Int64
 	}
-}
-
-func BuildTCPEgress(cfg TCPEgressConfig, deps handler.HandlerDeps) (*TCPEgress, error) {
-	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "")
-	if err != nil {
-		return nil, fmt.Errorf("BuildTCPEgress: failed to get logger: %w", err)
-	}
-	h := new(TCPEgress)
-
-	h.cfg.tag = cfg.Tag()
-
-	h.deps.dialer = net.Dialer{
-		Timeout: cfg.DialTimeout(), // TODO: general dialer config
-	}
-
-	h.deps.logger = logger
-
-	return h, nil
 }
 
 // Implement Handler
