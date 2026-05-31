@@ -1,36 +1,29 @@
 package log
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
 	"time"
 
-	"github.com/HT4w5/l4rt/pkg/modules"
-	"github.com/HT4w5/l4rt/pkg/utils/assert"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/diode"
 )
-
-func init() {
-	var cfg FactoryConfig
-	assert.Must(modules.RegisterModule(cfg, func(ctx context.Context, cfg any) (modules.Module, error) {
-		realCfg := cfg.(FactoryConfig)
-		zerolog.TimeFieldFormat = realCfg.TimeFormat()
-		f := &Factory{}
-		f.cfg.pullInterval = realCfg.PullInterval()
-		f.cfg.bufferSize = realCfg.BufferSize()
-
-		f.state.outputMap = make(map[string]io.Writer)
-		return f, nil
-	}))
-}
 
 type FactoryConfig interface {
 	PullInterval() time.Duration
 	BufferSize() int
 	TimeFormat() string
+}
+
+// NewFactory creates a new log.Factory from the given config.
+func NewFactory(cfg FactoryConfig) (*Factory, error) {
+	zerolog.TimeFieldFormat = cfg.TimeFormat()
+	f := &Factory{}
+	f.cfg.pullInterval = cfg.PullInterval()
+	f.cfg.bufferSize = cfg.BufferSize()
+	f.state.outputMap = make(map[string]io.Writer)
+	return f, nil
 }
 
 type Factory struct {
@@ -84,8 +77,4 @@ func (f *Factory) GetLogger(cfg Config, module string) (zerolog.Logger, error) {
 		loggerCtx = loggerCtx.Caller()
 	}
 	return loggerCtx.Logger(), nil
-}
-
-func (f *Factory) Type() any {
-	return (*Factory)(nil)
 }
