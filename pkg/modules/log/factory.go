@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -17,13 +18,19 @@ type FactoryConfig interface {
 }
 
 // NewFactory creates a new log.Factory from the given config.
-func NewFactory(cfg FactoryConfig) (*Factory, error) {
+func NewFactory(cfg FactoryConfig) (*Factory, func()) {
 	zerolog.TimeFieldFormat = cfg.TimeFormat()
 	f := &Factory{}
 	f.cfg.pullInterval = cfg.PullInterval()
 	f.cfg.bufferSize = cfg.BufferSize()
 	f.state.outputMap = make(map[string]io.Writer)
-	return f, nil
+	return f, func() {
+		f.state.Lock()
+		defer f.state.Unlock()
+		for _, closer := range f.state.closers {
+			closer.Close()
+		}
+	}
 }
 
 type Factory struct {
@@ -33,11 +40,16 @@ type Factory struct {
 	}
 
 	state struct {
+		sync.Mutex
 		outputMap map[string]io.Writer
+		closers   []io.Closer
 	}
 }
 
 func (f *Factory) GetLogger(cfg Config, module string) (zerolog.Logger, error) {
+	f.state.Lock()
+	defer f.state.Unlock()
+
 	output := cfg.Output()
 
 	var w io.Writer
@@ -50,9 +62,9 @@ func (f *Factory) GetLogger(cfg Config, module string) (zerolog.Logger, error) {
 		case "":
 			fallthrough
 		case "stderr":
-			w = diode.NewWriter(os.Stderr, f.cfg.bufferSize, f.cfg.pullInterval, nil)
+			w = os.Stderr
 		case "stdout":
-			w = diode.NewWriter(os.Stdout, f.cfg.bufferSize, f.cfg.pullInterval, nil)
+			w = os.Stdout
 		default:
 			file, err := os.OpenFile(
 				output,
@@ -60,10 +72,15 @@ func (f *Factory) GetLogger(cfg Config, module string) (zerolog.Logger, error) {
 				0600,
 			)
 			if err != nil {
-				return zerolog.Logger{}, fmt.Errorf("log.LoggerManager.GetLogger: failed to open log file: %w", err)
+				return zerolog.Logger{}, fmt.Errorf("GetLogger: failed to open log file: %w", err)
 			}
 
-			w = diode.NewWriter(file, f.cfg.bufferSize, f.cfg.pullInterval, nil)
+			dw := diode.NewWriter(file, f.cfg.bufferSize, f.cfg.pullInterval, nil)
+
+			f.state.closers = append(f.state.closers, dw)
+			f.state.closers = append(f.state.closers, file)
+
+			w = dw
 		}
 		f.state.outputMap[output] = w
 	}
