@@ -63,3 +63,5 @@ func (cfg *UDPIngressConfig) Listen() netip.AddrPort {
 func (cfg *UDPIngressConfig) Next() string {
 	return cfg.next
 }
+
+func (cfg *UDPIngressConfig) IsUDPIngressConfig() {}

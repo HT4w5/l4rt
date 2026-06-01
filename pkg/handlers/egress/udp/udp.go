@@ -7,19 +7,21 @@ import (
 
 	"github.com/HT4w5/l4rt/pkg/common/addr"
 	"github.com/HT4w5/l4rt/pkg/common/constants"
-	scontext "github.com/HT4w5/l4rt/pkg/common/context"
+	cctx "github.com/HT4w5/l4rt/pkg/common/context"
 	"github.com/HT4w5/l4rt/pkg/common/stream"
 	"github.com/HT4w5/l4rt/pkg/handlers"
+	"github.com/HT4w5/l4rt/pkg/modules/log"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 )
 
 type UDPEgressConfig interface {
 	handlers.HandlerConfig
+	IsUDPEgressConfig() // For interface uniqueness
 }
 
-func BuildUDPEgress(cfg UDPEgressConfig, deps handlers.HandlerDeps) (*UDPEgress, error) {
-	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
+func BuildUDPEgress(cfg UDPEgressConfig, loggerGetter log.Getter) (*UDPEgress, error) {
+	logger, err := loggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
 	if err != nil {
 		return nil, fmt.Errorf("BuildUDPEgress: failed to get logger: %w", err)
 	}
@@ -67,7 +69,7 @@ func (h *UDPEgress) Stats() map[string]any {
 	}
 }
 
-func (h *UDPEgress) HandlePacket(ctx *scontext.Context, s stream.PacketStream) error {
+func (h *UDPEgress) HandlePacket(ctx *cctx.Context, s stream.PacketStream) error {
 	laddr, err := net.ResolveUDPAddr("udp", ":0")
 	if err != nil {
 		h.deps.logger.Err(err).Msg("failed to resolve UDP address")

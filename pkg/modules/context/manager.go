@@ -5,7 +5,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	scontext "github.com/HT4w5/l4rt/pkg/common/context"
+	cctx "github.com/HT4w5/l4rt/pkg/common/context"
 )
 
 type ManagerConfig interface {
@@ -44,8 +44,8 @@ func NewManager(cfg ManagerConfig) *Manager {
 	return mgr
 }
 
-func (mgr *Manager) Rent(parent context.Context) *scontext.Context {
-	return &scontext.Context{
+func (mgr *Manager) Rent(parent context.Context) *cctx.Context {
+	return &cctx.Context{
 		Ctx:          parent,
 		KV:           mgr.state.kvPool.Get().(map[uint64]uint64),
 		HandlerStack: mgr.state.stackPool.Get().([]string),
@@ -53,7 +53,7 @@ func (mgr *Manager) Rent(parent context.Context) *scontext.Context {
 	}
 }
 
-func (mgr *Manager) Release(c *scontext.Context) {
+func (mgr *Manager) Release(c *cctx.Context) {
 	if len(c.KV) <= mgr.cfg.kvSize {
 		clear(c.KV)
 		mgr.state.kvPool.Put(c.KV)

@@ -3,7 +3,7 @@ package handlers
 import (
 	"context"
 
-	scontext "github.com/HT4w5/l4rt/pkg/common/context"
+	cctx "github.com/HT4w5/l4rt/pkg/common/context"
 	"github.com/HT4w5/l4rt/pkg/modules/log"
 
 	"github.com/HT4w5/l4rt/pkg/common/stream"
@@ -18,13 +18,13 @@ type Handler interface {
 // StreamHandler handles one byte stream.
 type StreamHandler interface {
 	Handler
-	HandleStream(ctx *scontext.Context, s stream.ByteStream) error
+	HandleStream(ctx *cctx.Context, s stream.ByteStream) error
 }
 
 // PacketHandler handles one packet stream.
 type PacketHandler interface {
 	Handler
-	HandlePacket(ctx *scontext.Context, s stream.PacketStream) error
+	HandlePacket(ctx *cctx.Context, s stream.PacketStream) error
 }
 
 // IngressHandler handles incoming external streams.
@@ -45,12 +45,8 @@ type Wirer interface {
 	Wire(getHandler WireFunc) error
 }
 
-type HandlerDeps struct {
-	LoggerGetter  log.LoggerGetter
-	ContextRenter scontext.ContextRenter
-}
-
 type HandlerConfig interface {
 	Tag() string
+	Type() string
 	LogConfig() log.Config
 }

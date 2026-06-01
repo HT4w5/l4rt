@@ -38,3 +38,5 @@ func (cfg *UDPEgressConfig) LogConfig() log.Config {
 func (cfg *UDPEgressConfig) Tag() string {
 	return cfg.tag
 }
+
+func (cfg *UDPEgressConfig) IsUDPEgressConfig() {}

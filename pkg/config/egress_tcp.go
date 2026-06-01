@@ -53,3 +53,5 @@ func (cfg *TCPEgressConfig) Tag() string {
 func (cfg *TCPEgressConfig) DialTimeout() time.Duration {
 	return cfg.dialTimeout
 }
+
+func (cfg *TCPEgressConfig) IsTCPEgressConfig() {}

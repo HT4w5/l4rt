@@ -10,9 +10,10 @@ import (
 	"sync/atomic"
 
 	"github.com/HT4w5/l4rt/pkg/common/addr"
-	scontext "github.com/HT4w5/l4rt/pkg/common/context"
 	"github.com/HT4w5/l4rt/pkg/common/stream"
 	"github.com/HT4w5/l4rt/pkg/handlers"
+	mctx "github.com/HT4w5/l4rt/pkg/modules/context"
+	"github.com/HT4w5/l4rt/pkg/modules/log"
 	"github.com/rs/zerolog"
 )
 
@@ -20,10 +21,11 @@ type TCPIngressConfig interface {
 	handlers.HandlerConfig
 	Listen() netip.AddrPort
 	Next() string
+	IsTCPIngressConfig() // For interface uniqueness
 }
 
-func BuildTCPIngress(cfg TCPIngressConfig, deps handlers.HandlerDeps) (*TCPIngress, error) {
-	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
+func BuildTCPIngress(cfg TCPIngressConfig, contextRenter mctx.Renter, loggerGetter log.Getter) (*TCPIngress, error) {
+	logger, err := loggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
 	if err != nil {
 		return nil, fmt.Errorf("BuildTCPIngress: failed to get logger: %w", err)
 	}
@@ -33,7 +35,7 @@ func BuildTCPIngress(cfg TCPIngressConfig, deps handlers.HandlerDeps) (*TCPIngre
 	h.cfg.next = cfg.Next()
 	h.cfg.listen = cfg.Listen()
 
-	h.deps.ctxr = deps.ContextRenter
+	h.deps.ctxr = contextRenter
 	h.deps.logger = logger
 
 	return h, nil
@@ -50,7 +52,7 @@ type TCPIngress struct {
 	}
 
 	deps struct {
-		ctxr   scontext.ContextRenter
+		ctxr   mctx.Renter
 		next   handlers.StreamHandler
 		logger zerolog.Logger
 	}

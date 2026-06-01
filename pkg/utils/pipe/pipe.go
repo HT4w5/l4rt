@@ -1,6 +1,8 @@
 package pipe
 
-import "io"
+import (
+	"io"
+)
 
 // TODOs:
 // 1. manage buffer manually for reuse

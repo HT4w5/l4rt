@@ -8,9 +8,10 @@ import (
 	"net/netip"
 	"sync"
 
-	scontext "github.com/HT4w5/l4rt/pkg/common/context"
 	"github.com/HT4w5/l4rt/pkg/common/stream"
 	"github.com/HT4w5/l4rt/pkg/handlers"
+	mctx "github.com/HT4w5/l4rt/pkg/modules/context"
+	"github.com/HT4w5/l4rt/pkg/modules/log"
 	"github.com/rs/zerolog"
 )
 
@@ -18,10 +19,11 @@ type UDPIngressConfig interface {
 	handlers.HandlerConfig
 	Listen() netip.AddrPort
 	Next() string
+	IsUDPIngressConfig() // For interface uniqueness
 }
 
-func BuildUDPIngress(cfg UDPIngressConfig, deps handlers.HandlerDeps) (*UDPIngress, error) {
-	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
+func BuildUDPIngress(cfg UDPIngressConfig, contextRenter mctx.Renter, loggerGetter log.Getter) (*UDPIngress, error) {
+	logger, err := loggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
 	if err != nil {
 		return nil, fmt.Errorf("BuildUDPIngress: failed to get logger: %w", err)
 	}
@@ -31,7 +33,7 @@ func BuildUDPIngress(cfg UDPIngressConfig, deps handlers.HandlerDeps) (*UDPIngre
 	h.cfg.listen = cfg.Listen()
 	h.cfg.next = cfg.Next()
 
-	h.deps.ctxr = deps.ContextRenter
+	h.deps.ctxr = contextRenter
 	h.deps.logger = logger
 
 	h.conn.done = make(chan struct{})
@@ -48,7 +50,7 @@ type UDPIngress struct {
 	}
 
 	deps struct {
-		ctxr   scontext.ContextRenter
+		ctxr   mctx.Renter
 		next   handlers.PacketHandler
 		logger zerolog.Logger
 	}

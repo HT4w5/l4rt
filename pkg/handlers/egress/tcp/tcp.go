@@ -6,9 +6,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	scontext "github.com/HT4w5/l4rt/pkg/common/context"
+	cctx "github.com/HT4w5/l4rt/pkg/common/context"
 	"github.com/HT4w5/l4rt/pkg/common/stream"
 	"github.com/HT4w5/l4rt/pkg/handlers"
+	"github.com/HT4w5/l4rt/pkg/modules/log"
 	"github.com/HT4w5/l4rt/pkg/utils/pipe"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
@@ -17,10 +18,11 @@ import (
 type TCPEgressConfig interface {
 	handlers.HandlerConfig
 	DialTimeout() time.Duration
+	IsTCPEgressConfig() // For interface uniqueness
 }
 
-func BuildTCPEgress(cfg TCPEgressConfig, deps handlers.HandlerDeps) (*TCPEgress, error) {
-	logger, err := deps.LoggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
+func BuildTCPEgress(cfg TCPEgressConfig, loggerGetter log.Getter) (*TCPEgress, error) {
+	logger, err := loggerGetter.GetLogger(cfg.LogConfig(), "handler/"+cfg.Tag())
 	if err != nil {
 		return nil, fmt.Errorf("BuildTCPEgress: failed to get logger: %w", err)
 	}
@@ -73,7 +75,7 @@ func (h *TCPEgress) Stats() map[string]any {
 
 // Implement StreamHandler
 
-func (h *TCPEgress) HandleStream(ctx *scontext.Context, s stream.ByteStream) error {
+func (h *TCPEgress) HandleStream(ctx *cctx.Context, s stream.ByteStream) error {
 	h.stats.handled.Add(1)
 	// Dst must be a valid TCP/IP address
 	ap, err := ctx.Dst.AssertTCPIPAddr()

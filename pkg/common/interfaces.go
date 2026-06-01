@@ -1,6 +1,8 @@
 package common
 
-import "context"
+import (
+	"context"
+)
 
 // Typer allows retrieving a type pointer.
 type Typer interface {

@@ -63,3 +63,5 @@ func (cfg *TCPIngressConfig) Listen() netip.AddrPort {
 func (cfg *TCPIngressConfig) Next() string {
 	return cfg.next
 }
+
+func (cfg *TCPIngressConfig) IsTCPIngressConfig() {}

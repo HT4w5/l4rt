@@ -6,3 +6,5 @@ type Validator interface {
 	// Configs must be validated before passed to object constructors.
 	Validate() error
 }
+
+type Config struct{}
