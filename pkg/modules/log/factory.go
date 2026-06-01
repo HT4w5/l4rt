@@ -11,6 +11,12 @@ import (
 	"github.com/rs/zerolog/diode"
 )
 
+var (
+	// For mock testing
+	stdout = os.Stdout
+	stderr = os.Stderr
+)
+
 type FactoryConfig interface {
 	PullInterval() time.Duration
 	BufferSize() int
@@ -62,9 +68,9 @@ func (f *Factory) GetLogger(cfg Config, module string) (zerolog.Logger, error) {
 		case "":
 			fallthrough
 		case "stderr":
-			w = os.Stderr
+			w = stderr
 		case "stdout":
-			w = os.Stdout
+			w = stdout
 		default:
 			file, err := os.OpenFile(
 				output,
