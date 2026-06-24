@@ -20,8 +20,8 @@ var Default = Addr{
 }
 
 type Addr struct {
-	Addr     string
 	IPAddr   netip.Addr
+	Addr     string
 	MuxIndex uint16
 	Family   Family
 }
