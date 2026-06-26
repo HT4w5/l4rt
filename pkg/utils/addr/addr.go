@@ -143,3 +143,7 @@ func (addr *Addr) URI() string {
 
 	return string(b)
 }
+
+func (addr *Addr) String() string {
+	return addr.URI()
+}
