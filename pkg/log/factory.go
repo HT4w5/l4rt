@@ -17,10 +17,10 @@ func init() {
 }
 
 type Getter interface {
-	GetLogger(cfg LogConfig) (zerolog.Logger, error)
+	GetLogger(cfg Config) (zerolog.Logger, error)
 }
 
-type LogConfig interface {
+type Config interface {
 	Level() zerolog.Level
 	Output() string
 }
@@ -57,7 +57,7 @@ func NewFactory(cfg FactoryConfig) (*Factory, func()) {
 	}
 }
 
-func (f *Factory) GetLogger(cfg LogConfig) (zerolog.Logger, error) {
+func (f *Factory) GetLogger(cfg Config) (zerolog.Logger, error) {
 	f.state.Lock()
 	defer f.state.Unlock()
 

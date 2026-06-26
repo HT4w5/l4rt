@@ -5,7 +5,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type GlobalLogConfig LogConfig
+type GlobalLogConfig Config
 
 func NewGlobalLogger(getter Getter, cfg GlobalLogConfig) (zerolog.Logger, error) {
 	return getter.GetLogger(cfg)
