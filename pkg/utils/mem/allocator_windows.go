@@ -8,7 +8,13 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-func Allocate(size int) ([]byte, error) {
+func init() {
+	defaultAllocator = &WindowsFileMappingAllocator{}
+}
+
+type WindowsFileMappingAllocator struct{}
+
+func (a *WindowsFileMappingAllocator) Allocate(size int) ([]byte, error) {
 	size64 := uint64(size)
 	fmap, err := windows.CreateFileMapping(
 		windows.InvalidHandle,
@@ -38,7 +44,7 @@ func Allocate(size int) ([]byte, error) {
 	return unsafe.Slice((*byte)(unsafe.Pointer(ptr)), size), nil
 }
 
-func Free(b []byte) error {
+func (a *WindowsFileMappingAllocator) Free(b []byte) error {
 	if b == nil {
 		return nil
 	}
