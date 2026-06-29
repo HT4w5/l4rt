@@ -17,8 +17,7 @@ import (
 )
 
 type Config interface {
-	Log() log.Config
-	Tag() string
+	node.Config
 	Listen() netip.AddrPort
 	NextTag() string
 }
@@ -61,6 +60,12 @@ func NewTCPIngress(cfg Config, loggerGetter log.Getter) (*TCPIngress, error) {
 		return nil, fmt.Errorf("NewTCPIngress: %w", err)
 	} else {
 		n.deps.logger = l.With().Stringer(log.Node, n).Logger()
+	}
+
+	n.ctxPool = sync.Pool{
+		New: func() any {
+			return &TCPConnCtx{}
+		},
 	}
 
 	return n, nil
@@ -120,9 +125,6 @@ func (n *TCPIngress) Start(ctx context.Context) error {
 }
 
 func (n *TCPIngress) handleTCPConn(conn *net.TCPConn) {
-	ctx := n.ctxPool.Get().(*TCPConnCtx)
-	defer n.ctxPool.Put(ctx)
-
 	srcAddrPort := conn.RemoteAddr().(*net.TCPAddr).AddrPort()
 
 	srcAddr := addr.Addr{
@@ -130,6 +132,9 @@ func (n *TCPIngress) handleTCPConn(conn *net.TCPConn) {
 		MuxIndex: srcAddrPort.Port(),
 		Family:   addr.FamilyTCP,
 	}
+
+	ctx := n.ctxPool.Get().(*TCPConnCtx)
+	defer n.ctxPool.Put(ctx)
 
 	ctx.Init(uctx.GetID(), conn, &srcAddr, &addr.Unknown)
 
