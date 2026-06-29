@@ -5,6 +5,7 @@ go 1.26.2
 require (
 	github.com/google/wire v0.7.0
 	github.com/rs/zerolog v1.35.1
+	golang.org/x/sync v0.8.0
 	golang.org/x/sys v0.29.0
 )
 
