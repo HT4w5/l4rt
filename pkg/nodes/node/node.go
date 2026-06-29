@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/HT4w5/l4rt/pkg/log"
 	uctx "github.com/HT4w5/l4rt/pkg/utils/context"
 )
 
 type Config interface {
 	Tag() string
+	Log() log.Config
 }
 
 type Node interface {

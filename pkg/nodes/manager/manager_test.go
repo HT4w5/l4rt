@@ -16,8 +16,15 @@ import (
 // Mock types
 // ---------------------------------------------------------------------------
 
+type mockConfigCommon struct{}
+
+func (c *mockConfigCommon) Log() log.Config {
+	return nil
+}
+
 // mockHandlerConfig yields a simple handler (neither active nor dispatcher).
 type mockHandlerConfig struct {
+	mockConfigCommon
 	tag string
 }
 
@@ -25,6 +32,7 @@ func (c *mockHandlerConfig) Tag() string { return c.tag }
 
 // mockActiveHandlerConfig yields an active handler.
 type mockActiveHandlerConfig struct {
+	mockConfigCommon
 	tag string
 }
 
@@ -33,6 +41,7 @@ func (c *mockActiveHandlerConfig) Tag() string { return c.tag }
 // mockDispatcherConfig yields a dispatcher that depends on handlers identified
 // by depTags.
 type mockDispatcherConfig struct {
+	mockConfigCommon
 	tag     string
 	depTags []string
 }
