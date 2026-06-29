@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/HT4w5/l4rt/pkg/log"
-	"github.com/HT4w5/l4rt/pkg/nodes/factory"
-	"github.com/HT4w5/l4rt/pkg/nodes/node"
+	"github.com/HT4w5/l4rt/pkg/node"
+	"github.com/HT4w5/l4rt/pkg/node/factory"
 	"github.com/rs/zerolog"
 )
 

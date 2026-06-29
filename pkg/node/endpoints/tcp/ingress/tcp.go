@@ -1,4 +1,4 @@
-package tcp
+package ingress
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 
 	"github.com/HT4w5/l4rt/pkg/log"
-	"github.com/HT4w5/l4rt/pkg/nodes/node"
+	"github.com/HT4w5/l4rt/pkg/node"
 	tcpopts "github.com/HT4w5/l4rt/pkg/transport/tcp"
 	"github.com/HT4w5/l4rt/pkg/utils/addr"
 	uctx "github.com/HT4w5/l4rt/pkg/utils/context"
@@ -57,7 +57,7 @@ func NewTCPIngress(cfg Config, loggerGetter log.Getter) (*TCPIngress, error) {
 	n.cfg.tag = cfg.Tag()
 	n.cfg.listen = cfg.Listen()
 	n.cfg.nextTag = cfg.NextTag()
-	n.cfg.name = "ingress/tcp:" + n.cfg.tag
+	n.cfg.name = "endpoint/tcp/ingress:" + n.cfg.tag
 
 	if l, err := loggerGetter.GetLogger(cfg.Log()); err != nil {
 		return nil, fmt.Errorf("NewTCPIngress: %w", err)

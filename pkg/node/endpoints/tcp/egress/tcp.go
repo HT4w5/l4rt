@@ -1,4 +1,4 @@
-package tcp
+package egress
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/HT4w5/l4rt/pkg/arena"
 	"github.com/HT4w5/l4rt/pkg/log"
-	"github.com/HT4w5/l4rt/pkg/nodes/node"
+	"github.com/HT4w5/l4rt/pkg/node"
 	tcpopts "github.com/HT4w5/l4rt/pkg/transport/tcp"
 	uctx "github.com/HT4w5/l4rt/pkg/utils/context"
 	"github.com/HT4w5/l4rt/pkg/utils/iox"
@@ -52,7 +52,7 @@ func NewTCPEgress(cfg Config, loggerGetter log.Getter, arena arena.Arena) (*TCPE
 	te := &TCPEgress{}
 
 	te.cfg.tag = cfg.Tag()
-	te.cfg.name = "egress/tcp:" + te.cfg.tag
+	te.cfg.name = "endpoint/tcp/egress:" + te.cfg.tag
 	if addr, ok := cfg.FixedRaddr(); ok {
 		te.cfg.hasFixedRaddr = true
 		te.cfg.fixedRaddr = addr
