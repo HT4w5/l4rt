@@ -11,6 +11,7 @@ import (
 
 	"github.com/HT4w5/l4rt/pkg/log"
 	"github.com/HT4w5/l4rt/pkg/nodes/node"
+	tcpopts "github.com/HT4w5/l4rt/pkg/transport/tcp"
 	"github.com/HT4w5/l4rt/pkg/utils/addr"
 	uctx "github.com/HT4w5/l4rt/pkg/utils/context"
 	"github.com/rs/zerolog"
@@ -20,6 +21,7 @@ type Config interface {
 	node.Config
 	Listen() netip.AddrPort
 	NextTag() string
+	TCP() tcpopts.Config
 }
 
 // Implements [node.ActiveNode], [node.Dispatcher]
@@ -32,8 +34,9 @@ type TCPIngress struct {
 	}
 
 	deps struct {
-		logger zerolog.Logger
-		next   node.StreamHandler
+		logger       zerolog.Logger
+		next         node.StreamHandler
+		listenConfig *net.ListenConfig
 	}
 
 	pool struct {
@@ -60,6 +63,12 @@ func NewTCPIngress(cfg Config, loggerGetter log.Getter) (*TCPIngress, error) {
 		return nil, fmt.Errorf("NewTCPIngress: %w", err)
 	} else {
 		n.deps.logger = l.With().Stringer(log.Node, n).Logger()
+	}
+
+	var err error
+	n.deps.listenConfig, err = tcpopts.NewListenConfig(cfg.TCP())
+	if err != nil {
+		return nil, fmt.Errorf("NewTCPIngress: failed to create ListenConfig: %w", err)
 	}
 
 	n.ctxPool = sync.Pool{
@@ -97,8 +106,7 @@ func (n *TCPIngress) Handlers() []node.Node {
 }
 
 func (n *TCPIngress) Start(ctx context.Context) error {
-	lc := net.ListenConfig{}
-	listener, err := lc.Listen(ctx, "tcp", n.cfg.listen.String())
+	listener, err := n.deps.listenConfig.Listen(ctx, "tcp", n.cfg.listen.String())
 	if err != nil {
 		return fmt.Errorf("Start: listen failed: %w", err)
 	}

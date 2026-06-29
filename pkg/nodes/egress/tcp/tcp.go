@@ -10,6 +10,7 @@ import (
 	"github.com/HT4w5/l4rt/pkg/arena"
 	"github.com/HT4w5/l4rt/pkg/log"
 	"github.com/HT4w5/l4rt/pkg/nodes/node"
+	tcpopts "github.com/HT4w5/l4rt/pkg/transport/tcp"
 	uctx "github.com/HT4w5/l4rt/pkg/utils/context"
 	"github.com/HT4w5/l4rt/pkg/utils/iox"
 	"github.com/rs/zerolog"
@@ -21,6 +22,7 @@ type Config interface {
 	FixedRaddr() (netip.AddrPort, bool)
 	BindLaddr() (netip.AddrPort, bool)
 	BufferSize() int
+	TCP() tcpopts.Config
 }
 
 type TCPEgress struct {
@@ -42,7 +44,7 @@ type TCPEgress struct {
 	deps struct {
 		logger zerolog.Logger
 		arena  arena.Arena
-		dialer net.Dialer
+		dialer *net.Dialer
 	}
 }
 
@@ -68,7 +70,11 @@ func NewTCPEgress(cfg Config, loggerGetter log.Getter, arena arena.Arena) (*TCPE
 	}
 
 	te.deps.arena = arena
-	te.deps.dialer = net.Dialer{} // TODO: add options
+	var err error
+	te.deps.dialer, err = tcpopts.NewDialer(cfg.TCP())
+	if err != nil {
+		return nil, fmt.Errorf("NewTCPEgress: failed to create dialer: %w", err)
+	}
 
 	return te, nil
 }
@@ -91,10 +97,6 @@ func (te *TCPEgress) HandleStream(ctx uctx.StreamCtx) error {
 	var laddr netip.AddrPort
 	if te.cfg.hasBindLaddr {
 		laddr = te.cfg.bindLaddr
-	}
-
-	if err := ctx.Err(); err != nil {
-		return err
 	}
 
 	if err := ctx.Err(); err != nil {
@@ -131,6 +133,7 @@ func (te *TCPEgress) HandleStream(ctx uctx.StreamCtx) error {
 
 		if err != nil {
 			te.deps.logger.Warn().EmbedObject(ctx).Err(err).Send()
+			ctx.Cancel()
 		}
 		return
 	})
@@ -143,6 +146,7 @@ func (te *TCPEgress) HandleStream(ctx uctx.StreamCtx) error {
 
 		if err != nil {
 			te.deps.logger.Warn().EmbedObject(ctx).Err(err).Send()
+			ctx.Cancel()
 		}
 		return
 	})
