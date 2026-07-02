@@ -34,7 +34,7 @@ func NewManager(cfg Config, logger zerolog.Logger, loggerGetter log.Getter) (*Ma
 
 	mgr.nodes.all = make(map[string]node.Node)
 
-	mgr.deps.logger = logger.With().Str(log.Module, "NodeManager").Logger()
+	mgr.deps.logger = logger.With().Str(log.KeyModule, "NodeManager").Logger()
 	mgr.deps.loggerGetter = loggerGetter
 
 	for _, c := range cfg.Nodes() {

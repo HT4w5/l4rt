@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/HT4w5/l4rt/pkg/log"
-	uctx "github.com/HT4w5/l4rt/pkg/utils/context"
+	"github.com/HT4w5/l4rt/pkg/node/request"
 )
 
 type Config interface {
@@ -18,6 +18,14 @@ type Node interface {
 	Tag() string
 }
 
+type Starter interface {
+	Start(ctx context.Context) error
+}
+
+type Stopper interface {
+	Stop(ctx context.Context) error
+}
+
 type ActiveNode interface {
 	Node
 	Start(ctx context.Context) error
@@ -26,17 +34,12 @@ type ActiveNode interface {
 
 type StreamHandler interface {
 	Node
-	HandleStream(ctx uctx.StreamCtx) error
+	HandleStream(ctx context.Context, req *request.Stream) error
 }
 
 type PacketHandler interface {
 	Node
-	HandlePacket(ctx uctx.PacketCtx) error
-}
-
-type ResolveHandler interface {
-	Node
-	HandleResolve(ctx uctx.ResolveCtx) error
+	HandlePacket(ctx context.Context, req *request.Packet) error
 }
 
 type Dispatcher interface {

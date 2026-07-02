@@ -1,4 +1,4 @@
-package context
+package id
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ func BenchmarkSimpleIDCounter(b *testing.B) {
 			c := SimpleIDCounter{}
 			b.RunParallel(func(p *testing.PB) {
 				for p.Next() {
-					c.GetID()
+					c.Get()
 				}
 			})
 		})
@@ -29,7 +29,7 @@ func BenchmarkRandomShardedIDCounter(b *testing.B) {
 			c := NewRandomShardedIDCounter(i)
 			b.RunParallel(func(p *testing.PB) {
 				for p.Next() {
-					c.GetID()
+					c.Get()
 				}
 			})
 		})

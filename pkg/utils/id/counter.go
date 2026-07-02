@@ -1,4 +1,4 @@
-package context
+package id
 
 import (
 	"math/rand/v2"
@@ -16,18 +16,18 @@ func init() {
 }
 
 type IDCounter interface {
-	GetID() uint64
+	Get() uint64
 }
 
 var globalIDCounter IDCounter
 
-func GetID() uint64 {
-	return globalIDCounter.GetID()
+func Get() uint64 {
+	return globalIDCounter.Get()
 }
 
 type SimpleIDCounter struct{ atomic.Uint64 }
 
-func (c *SimpleIDCounter) GetID() uint64 {
+func (c *SimpleIDCounter) Get() uint64 {
 	return c.Add(1)
 }
 
@@ -62,7 +62,7 @@ func NewRandomShardedIDCounter(n int) *RandomShardedIDCounter {
 	}
 }
 
-func (c *RandomShardedIDCounter) GetID() uint64 {
+func (c *RandomShardedIDCounter) Get() uint64 {
 	idx := rand.Int() & c.mask
 
 	val := c.shards[idx].value.Add(1)

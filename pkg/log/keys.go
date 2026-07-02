@@ -1,10 +1,19 @@
 package log
 
 const (
-	ID         = "id"
-	SourceAddr = "src_addr"
-	DestAddr   = "dst_addr"
-	Context    = "ctx"
-	Node       = "node"
-	Module     = "module"
+	KeyNode    = "node"
+	KeyModule  = "module"
+	KeyRequest = "request"
+)
+
+// Reqeusts
+const (
+	KeyRequestID   = "id"
+	KeyRequestType = "type"
+)
+
+// Addrs
+const (
+	KeyAddrSrc = "src"
+	KeyAddrDst = "dst"
 )
