@@ -1,4 +1,4 @@
-package id
+package idc
 
 import (
 	"math/rand/v2"

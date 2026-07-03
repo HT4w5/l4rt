@@ -2,7 +2,6 @@ package context
 
 import (
 	"errors"
-	"net/netip"
 	"time"
 
 	"github.com/HT4w5/l4rt/pkg/utils/addr"
@@ -18,6 +17,9 @@ var (
 type commonCtx interface {
 	zerolog.LogObjectMarshaler
 	ID() uint64
+}
+
+type lifecycleCtx interface {
 	Cancel() error
 	Err() error
 	Deadline() (time.Time, bool)
@@ -26,25 +28,14 @@ type commonCtx interface {
 
 type StreamCtx interface {
 	commonCtx
+	lifecycleCtx
 	// Data
 	Read(p []byte) (n int, err error)
 	Write(p []byte) (n int, err error)
 	CloseWrite() error
 	// Metadata
-	SetSrcAddr(addr *addr.Addr)
-	SrcAddr() *addr.Addr
-	SetDstAddr(addr *addr.Addr)
-	DstAddr() *addr.Addr
-}
-
-type PacketCtx interface {
-	commonCtx
-	Packet() []byte
-}
-
-type ResolveCtx interface {
-	commonCtx
-	FQDN() []byte
-	SetIPAddr(addr netip.Addr) error
-	IPAddr() netip.Addr
+	SetSrcAddr(addr addr.Addr)
+	SrcAddr() addr.Addr
+	SetDstAddr(addr addr.Addr)
+	DstAddr() addr.Addr
 }

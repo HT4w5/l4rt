@@ -14,7 +14,7 @@ import (
 	"github.com/HT4w5/l4rt/pkg/node/request"
 	tcpopts "github.com/HT4w5/l4rt/pkg/transport/tcp"
 	"github.com/HT4w5/l4rt/pkg/utils/addr"
-	"github.com/HT4w5/l4rt/pkg/utils/id"
+	"github.com/HT4w5/l4rt/pkg/utils/idc"
 	"github.com/rs/zerolog"
 )
 
@@ -118,7 +118,7 @@ func (ti *TCPIngress) Start(ctx context.Context) error {
 					return
 				}
 				ti.deps.logger.Error().Stack().Err(err).Msg("accept error")
-				return
+				continue
 			}
 			ti.stats.accepted.Add(1)
 			ti.pool.Go(func() {
@@ -133,19 +133,17 @@ func (ti *TCPIngress) Start(ctx context.Context) error {
 func (ti *TCPIngress) handleTCPConn(conn *net.TCPConn) {
 	srcAddrPort := conn.RemoteAddr().(*net.TCPAddr).AddrPort()
 
-	srcAddr := addr.Addr{
-		IPAddr:   srcAddrPort.Addr(),
-		MuxIndex: srcAddrPort.Port(),
-		Family:   addr.FamilyTCP,
-	}
-
 	req := request.Stream{
 		Conn: conn,
 		Metadata: request.StreamMetadata{
-			SrcAddr: srcAddr,
+			SrcAddr: addr.Addr{
+				IPAddr:   srcAddrPort.Addr(),
+				MuxIndex: srcAddrPort.Port(),
+				Family:   addr.FamilyTCP,
+			},
 			DstAddr: addr.Unknown,
 		},
-		ID: id.Get(),
+		ID: idc.Get(),
 	}
 
 	ti.deps.logger.Info().Object(log.KeyRequest, &req).Msg("stream request created")
