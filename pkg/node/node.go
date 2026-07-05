@@ -18,18 +18,16 @@ type Node interface {
 	Tag() string
 }
 
-type Starter interface {
-	Start(ctx context.Context) error
-}
-
-type Stopper interface {
-	Stop(ctx context.Context) error
-}
-
-type ActiveNode interface {
+// Worker represents nodes with long-running routines.
+type Worker interface {
 	Node
+	// Start initializes the node.
 	Start(ctx context.Context) error
-	Shutdown(ctx context.Context) error
+	// Run is the node's main routine.
+	// Run is expected to block until Stop is called and downstream jobs finish.
+	Run(ctx context.Context) error
+	// Stop signals node shutdown.
+	Stop(ctx context.Context) error
 }
 
 type StreamHandler interface {

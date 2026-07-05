@@ -28,7 +28,6 @@ type Config interface {
 	NumWorkers() (n int, auto bool)
 }
 
-// Implements [node.ActiveNode], [node.Dispatcher]
 type UDPEndpoint struct {
 	deps struct {
 		logger       zerolog.Logger
@@ -36,14 +35,10 @@ type UDPEndpoint struct {
 		listenConfig *net.ListenConfig
 		arena        arena.Arena
 	}
-	workers struct {
-		ctx        context.Context
-		packetChan chan packet
-		cancel     context.CancelFunc
-		sync.WaitGroup
-	}
-	conn *net.UDPConn
-	cfg  struct {
+	ctx    context.Context
+	cancel context.CancelFunc
+	conn   *net.UDPConn
+	cfg    struct {
 		tag        string
 		name       string
 		listen     netip.AddrPort
@@ -112,23 +107,21 @@ func (ue *UDPEndpoint) Handlers() []node.Node {
 	return []node.Node{ue.deps.next}
 }
 
+// implement [node.Worker]
 func (ue *UDPEndpoint) Start(ctx context.Context) error {
-	// Start workers
-	ue.workers.packetChan = make(chan packet)
-	ue.workers.ctx, ue.workers.cancel = context.WithCancel(context.Background())
-
-	for range ue.cfg.numWorkers {
-		ue.workers.Go(ue.handleUDPPacket)
-	}
-
 	conn, err := ue.deps.listenConfig.ListenPacket(ctx, "udp", ue.cfg.listen.String())
 	if err != nil {
 		ue.deps.logger.Error().Stack().Err(err).Stringer("listen", ue.cfg.listen).Msg("listen failed")
 		return fmt.Errorf("Start: listen failed: %w", err)
 	}
-
 	ue.conn = conn.(*net.UDPConn)
+	return nil
+}
 
+func (ue *UDPEndpoint) Run(ctx context.Context) error {
+	ue.ctx, ue.cancel = context.WithCancel(ctx)
+
+	// Allocate first buffer
 	currentID := idc.Get()
 	currentBuf, err := ue.deps.arena.Get(currentID, ue.cfg.bufferSize)
 	if err != nil {
@@ -136,45 +129,64 @@ func (ue *UDPEndpoint) Start(ctx context.Context) error {
 		return err
 	}
 
-	ue.workers.Go(func() {
-		for {
-			n, ap, err := ue.conn.ReadFromUDPAddrPort(currentBuf)
-			if err != nil {
-				if errors.Is(err, net.ErrClosed) {
-					break
-				}
-
-				ue.deps.logger.Warn().Err(err).Msg("read packet failed")
-				continue
-			}
-
-			// Pre-allocate next buffer
-			nextID := idc.Get()
-			nextBuf, err := ue.deps.arena.Get(nextID, ue.cfg.bufferSize)
-			if err != nil {
-				if errors.Is(err, arena.ErrOutOfMemory) {
-					ue.deps.logger.Warn().Err(err).Msg("packet dropped")
-				} else {
-					ue.deps.logger.Error().Stack().Err(err).Msg("buffer allocation failed; packet dropped")
-				}
-				continue
-			}
-
-			ue.workers.packetChan <- packet{
-				P:   currentBuf[:n],
-				Src: ap,
-				ID:  currentID,
-			}
-
-			currentBuf = nextBuf
-			currentID = nextID
+	// watchdog
+	go func() {
+		<-ue.ctx.Done()
+		if err := ue.conn.Close(); err != nil {
+			ue.deps.logger.Warn().Err(err).Msg("failed to close UDP connection")
 		}
-		close(ue.workers.packetChan)
-		if err := ue.deps.arena.Put(currentID, currentBuf); err != nil {
-			ue.deps.logger.Warn().Err(err).Msg("failed to release last buffer")
-		}
-	})
+	}()
 
+	// Start workers
+	var wg sync.WaitGroup
+	packetChan := make(chan packet, ue.cfg.numWorkers)
+
+	for range ue.cfg.numWorkers {
+		wg.Go(func() {
+			ue.handleUDPPacket(packetChan)
+		})
+	}
+
+	for {
+		n, ap, err := ue.conn.ReadFromUDPAddrPort(currentBuf)
+		if err != nil {
+			if errors.Is(err, net.ErrClosed) {
+				break
+			}
+
+			ue.deps.logger.Warn().Err(err).Msg("read packet failed")
+			continue
+		}
+
+		// Pre-allocate next buffer
+		nextID := idc.Get()
+		nextBuf, err := ue.deps.arena.Get(nextID, ue.cfg.bufferSize)
+		if err != nil {
+			if errors.Is(err, arena.ErrOutOfMemory) {
+				ue.deps.logger.Warn().Err(err).Msg("packet dropped")
+			} else {
+				ue.deps.logger.Error().Stack().Err(err).Msg("buffer allocation failed; packet dropped")
+			}
+			continue
+		}
+
+		packetChan <- packet{
+			P:   currentBuf[:n],
+			Src: ap,
+			ID:  currentID,
+		}
+
+		currentBuf = nextBuf
+		currentID = nextID
+	}
+
+	if err := ue.deps.arena.Put(currentID, currentBuf); err != nil {
+		ue.deps.logger.Warn().Err(err).Msg("failed to release last buffer")
+	}
+
+	close(packetChan)
+
+	wg.Wait()
 	return nil
 }
 
@@ -184,8 +196,8 @@ type packet struct {
 	ID  uint64
 }
 
-func (ue *UDPEndpoint) handleUDPPacket() {
-	for pkt := range ue.workers.packetChan {
+func (ue *UDPEndpoint) handleUDPPacket(packetChan <-chan packet) {
+	for pkt := range packetChan {
 		req := request.Packet{
 			P: pkt.P,
 			Metadata: request.PacketMetadata{
@@ -198,7 +210,7 @@ func (ue *UDPEndpoint) handleUDPPacket() {
 			},
 			ID: pkt.ID,
 		}
-		if err := ue.deps.next.HandlePacket(ue.workers.ctx, &req); err != nil {
+		if err := ue.deps.next.HandlePacket(ue.ctx, &req); err != nil {
 			ue.deps.logger.Warn().Object(log.KeyRequest, &req).Err(err).Msg("packet request failed")
 		}
 		if err := ue.deps.arena.Put(req.ID, req.P); err != nil {
@@ -208,23 +220,25 @@ func (ue *UDPEndpoint) handleUDPPacket() {
 }
 
 func (ue *UDPEndpoint) Stop(ctx context.Context) error {
-	if err := ue.conn.Close(); err != nil {
-		ue.deps.logger.Warn().Err(err).Msg("failed to close listen")
+	ue.cancel()
+	return nil
+}
+
+// implement [node.PacketHandler]
+func (ue *UDPEndpoint) HandlePacket(ctx context.Context, req *request.Packet) error {
+	logger := ue.deps.logger.With().Object(log.KeyRequest, req).Logger()
+
+	if req.Metadata.DstAddr.Family != addr.FamilyUDP {
+		return addr.ErrFamilyNotSupported
+	}
+	raddr := netip.AddrPortFrom(req.Metadata.DstAddr.IPAddr, req.Metadata.DstAddr.MuxIndex)
+
+	// TODO: add stats
+	_, err := ue.conn.WriteToUDPAddrPort(req.P, raddr)
+	if err != nil {
+		logger.Warn().Err(err).Msg("write packet failed")
+		return err
 	}
 
-	ue.workers.cancel()
-
-	done := make(chan struct{})
-
-	go func() {
-		ue.workers.Wait()
-		close(done)
-	}()
-
-	select {
-	case <-done:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
+	return nil
 }

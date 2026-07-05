@@ -13,6 +13,7 @@ import (
 	"github.com/HT4w5/l4rt/pkg/node"
 	"github.com/HT4w5/l4rt/pkg/node/request"
 	tcpopts "github.com/HT4w5/l4rt/pkg/transport/tcp"
+	"github.com/HT4w5/l4rt/pkg/utils/addr"
 	"github.com/HT4w5/l4rt/pkg/utils/iox"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
@@ -35,10 +36,8 @@ type TCPEgress struct {
 	cfg struct {
 		tag           string
 		name          string
-		hasFixedRaddr bool
-		fixedRaddr    netip.AddrPort
-		hasBindLaddr  bool
-		bindLaddr     netip.AddrPort
+		hasFixedLaddr bool
+		fixedLaddr    netip.AddrPort
 		bufferSize    int
 	}
 
@@ -54,13 +53,9 @@ func NewTCPEgress(cfg Config, loggerGetter log.Getter, arena arena.Arena) (*TCPE
 
 	te.cfg.tag = cfg.Tag()
 	te.cfg.name = "endpoint/tcp/egress:" + te.cfg.tag
-	if addr, ok := cfg.FixedRaddr(); ok {
-		te.cfg.hasFixedRaddr = true
-		te.cfg.fixedRaddr = addr
-	}
 	if addr, ok := cfg.BindLaddr(); ok {
-		te.cfg.hasBindLaddr = true
-		te.cfg.bindLaddr = addr
+		te.cfg.hasFixedLaddr = true
+		te.cfg.fixedLaddr = addr
 	}
 	te.cfg.bufferSize = cfg.BufferSize()
 
@@ -89,16 +84,14 @@ func (te *TCPEgress) String() string {
 func (te *TCPEgress) HandleStream(ctx context.Context, req *request.Stream) error {
 	logger := te.deps.logger.With().Object(log.KeyRequest, req).Logger()
 
-	var raddr netip.AddrPort
-	if te.cfg.hasFixedRaddr {
-		raddr = te.cfg.fixedRaddr
-	} else {
-		raddr = netip.AddrPortFrom(req.Metadata.DstAddr.IPAddr, req.Metadata.DstAddr.MuxIndex)
+	if req.Metadata.DstAddr.Family != addr.FamilyTCP {
+		return addr.ErrFamilyNotSupported
 	}
+	raddr := netip.AddrPortFrom(req.Metadata.DstAddr.IPAddr, req.Metadata.DstAddr.MuxIndex)
 
 	var laddr netip.AddrPort
-	if te.cfg.hasBindLaddr {
-		laddr = te.cfg.bindLaddr
+	if te.cfg.hasFixedLaddr {
+		laddr = te.cfg.fixedLaddr
 	}
 
 	conn, err := te.deps.dialer.DialTCP(ctx, "tcp", laddr, raddr)
